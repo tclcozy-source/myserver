@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Demo</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        pre {
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: left;
+            font-size: 18px;
+            color: #a8dadc;
+            display: inline-block;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Demo</h1>
+    <p>Data fetched from <code>/api/info</code>:</p>
+    <pre id="output">Loading...</pre>
+    <br>
+    <button class="btn" onclick="fetchData()">Refresh</button>
+    <br><br>
+    <a href="/">Go Home</a>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('/api/info');
+            const data = await response.json();
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>

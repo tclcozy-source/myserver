@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        input, textarea {
+            width: 350px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #0f3460;
+            background: #0f3460;
+            color: white;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        #status {
+            font-size: 18px;
+            min-height: 28px;
+        }
+        .success { color: #4caf50; }
+        .error   { color: #e94560; }
+    </style>
+</head>
+<body>
+    <h1>Contact Me</h1>
+    <p>Send me a message and it gets saved on the server!</p>
+
+    <form id="contactForm">
+        <input  type="text"  id="name"    placeholder="Your name"    required>
+        <input  type="email" id="email"   placeholder="Your email"   required>
+        <textarea            id="message" placeholder="Your message" required></textarea>
+        <button class="btn" type="submit">Send Message</button>
+    </form>
+
+    <p id="status"></p>
+    <br>
+    <a href="/">Go Home</a>
+
+    <script>
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const status = document.getElementById('status');
+            status.textContent = 'Sending...';
+            status.className = '';
+
+            const body = {
+                name:    document.getElementById('name').value,
+                email:   document.getElementById('email').value,
+                message: document.getElementById('message').value
+            };
+
+            try {
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    status.textContent = data.message;
+                    status.className = 'success';
+                    document.getElementById('contactForm').reset();
+                } else {
+                    status.textContent = data.error;
+                    status.className = 'error';
+                }
+            } catch (err) {
+                status.textContent = 'Something went wrong. Try again.';
+                status.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .message-card {
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px auto;
+            max-width: 500px;
+            text-align: left;
+        }
+        .message-card .meta {
+            color: #e94560;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .message-card p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        input[type="password"] {
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #0f3460;
+            background: #0f3460;
+            color: white;
+            font-size: 16px;
+            width: 250px;
+            margin-right: 10px;
+        }
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        #error { color: #e94560; font-size: 16px; min-height: 24px; }
+        #count { color: #a8dadc; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Messages</h1>
+
+    <!-- Password gate -->
+    <div id="loginSection">
+        <p>Enter the password to view messages:</p>
+        <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter') unlock()">
+        <button class="btn" onclick="unlock()">Unlock</button>
+        <p id="error"></p>
+    </div>
+
+    <!-- Messages (hidden until password is correct) -->
+    <div id="messagesSection" style="display:none;">
+        <p id="count"></p>
+        <div id="messages"></div>
+        <br>
+        <button class="btn" onclick="lock()">Lock</button>
+    </div>
+
+    <br><br>
+    <a href="/">Go Home</a>
+
+    <script>
+        async function unlock() {
+            const password = document.getElementById('passwordInput').value;
+            const error = document.getElementById('error');
+            error.textContent = '';
+
+            const response = await fetch('/api/messages', {
+                headers: { 'x-password': password }
+            });
+
+            if (response.status === 401) {
+                error.textContent = 'Wrong password. Try again.';
+                return;
+            }
+
+            const messages = await response.json();
+
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('messagesSection').style.display = 'block';
+
+            const count = document.getElementById('count');
+            const container = document.getElementById('messages');
+
+            if (messages.length === 0) {
+                count.textContent = 'No messages yet.';
+                return;
+            }
+
+            count.textContent = `${messages.length} message${messages.length > 1 ? 's' : ''} received`;
+
+            container.innerHTML = messages.reverse().map(msg => `
+                <div class="message-card">
+                    <div class="meta">${new Date(msg.date).toLocaleString()}</div>
+                    <p><strong>${msg.name}</strong> — ${msg.email}</p>
+                    <p>${msg.message}</p>
+                </div>
+            `).join('');
+        }
+
+        function lock() {
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('messagesSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
