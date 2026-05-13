@@ -24,17 +24,11 @@ body {
 
 /* ── Back link ── */
 .back-btn {
-    background: none;
-    border: 1px solid #3a3a3c;
-    color: white;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 13px;
-    cursor: pointer;
+    color: #a8dadc;
     text-decoration: none;
-    transition: border-color 0.2s, background 0.2s;
+    font-size: 14px;
 }
-.back-btn:hover { border-color: #888; background: rgba(255,255,255,0.05); }
+.back-btn:hover { color: white; }
 
 /* ── Buttons ── */
 .btn {
@@ -273,7 +267,7 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 
 <!-- ═══════════════════════════════════════════════════════════ LOBBY -->
 <div id="lobby" class="screen active">
-    <a class="back-btn" href="https://shahmeer.me">← Back</a>
+    <a class="back-btn" href="https://shahmeer.me">← Back to Home</a>
     <div class="logo">⚓ Battle<span>ship</span></div>
     <div class="card">
         <h2>Start a Game</h2>
@@ -287,7 +281,7 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 
 <!-- ═══════════════════════════════════════════════════════════ WAITING FOR P2 -->
 <div id="waiting" class="screen">
-    <a class="back-btn" href="https://shahmeer.me">← Back</a>
+    <a class="back-btn" href="https://shahmeer.me">← Back to Home</a>
     <div class="room-code-box">
         <p>Share this code with your friend:</p>
         <div class="code-display" id="displayCode">????</div>
@@ -321,7 +315,7 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 <!-- ═══════════════════════════════════════════════════════════ GAME -->
 <div id="game" class="screen">
     <div class="game-header">
-        <a class="back-btn" href="https://shahmeer.me">← Back</a>
+        <a class="back-btn" href="https://shahmeer.me">← Back to Home</a>
         <div class="turn-indicator" id="turnIndicator">Waiting…</div>
         <div style="width:70px"></div>
     </div>
