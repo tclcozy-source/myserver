@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draw & Guess</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a2e; color: white; font-family: Arial, sans-serif; min-height: 100vh; }
+
+/* ── Screens ── */
+.screen { display: none; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+/* ── Back ── */
+.back-btn { color: #a8dadc; text-decoration: none; font-size: 14px; }
+.back-btn:hover { color: white; }
+
+/* ── Buttons ── */
+.btn {
+    background: #e94560; border: none; border-radius: 10px; color: white;
+    cursor: pointer; font-size: 15px; font-weight: bold; padding: 11px 22px;
+    transition: background 0.2s;
+}
+.btn:hover { background: #c73652; }
+.btn:disabled { background: #444; cursor: not-allowed; }
+.btn-ghost {
+    background: transparent; border: 2px solid #e94560; border-radius: 10px;
+    color: #e94560; cursor: pointer; font-size: 14px; padding: 9px 18px;
+    transition: all 0.2s;
+}
+.btn-ghost:hover { background: #e94560; color: white; }
+
+/* ── Lobby ── */
+#lobby { justify-content: center; gap: 24px; padding: 40px 20px; min-height: 100vh; }
+.logo { font-size: 46px; font-weight: bold; text-align: center; }
+.logo span { color: #e94560; }
+.card {
+    background: #0f3460; border-radius: 14px; padding: 28px 34px;
+    display: flex; flex-direction: column; gap: 12px; width: 320px;
+}
+.card h2 { color: #a8dadc; font-size: 16px; text-align: center; }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-group label { color: #a8dadc; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+input[type="text"] {
+    background: #16213e; border: 2px solid transparent; border-radius: 8px;
+    color: white; font-size: 15px; padding: 10px 12px; width: 100%;
+}
+input[type="text"]:focus { outline: none; border-color: #e94560; }
+.divider { text-align: center; color: #555; font-size: 13px; }
+.error-msg { color: #e94560; font-size: 13px; min-height: 18px; text-align: center; }
+
+/* ── Waiting Room ── */
+#waiting { justify-content: center; gap: 20px; padding: 40px 20px; min-height: 100vh; }
+.waiting-card {
+    background: #0f3460; border-radius: 14px; padding: 28px 36px;
+    width: 400px; display: flex; flex-direction: column; gap: 16px;
+}
+.waiting-card h2 { color: #e94560; text-align: center; font-size: 20px; }
+.code-row { text-align: center; }
+.code-row p { color: #a8dadc; font-size: 13px; margin-bottom: 6px; }
+.code-big { font-size: 46px; font-weight: bold; color: #e94560; letter-spacing: 10px; }
+.player-list-lobby { display: flex; flex-direction: column; gap: 6px; }
+.player-entry {
+    background: #16213e; border-radius: 8px; padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px; font-size: 14px;
+}
+.player-entry .crown { font-size: 14px; }
+.waiting-hint { color: #555; font-size: 13px; text-align: center; }
+
+/* ── Game Screen ── */
+#game {
+    flex-direction: row !important;
+    align-items: stretch !important;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Player panel */
+.player-panel {
+    width: 180px; min-width: 160px; background: #0a0a1a;
+    display: flex; flex-direction: column; gap: 0; border-right: 1px solid #16213e;
+    overflow-y: auto;
+}
+.panel-header {
+    padding: 10px 12px; background: #0f3460;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a8dadc;
+    border-bottom: 1px solid #16213e;
+}
+.player-score-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px; border-bottom: 1px solid #0f0f2a; font-size: 13px;
+    transition: background 0.2s;
+}
+.player-score-item.is-drawing { background: #0f2040; }
+.player-score-item .av {
+    width: 26px; height: 26px; border-radius: 50%; background: #e94560;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: bold; flex-shrink: 0;
+}
+.player-score-item .info { flex: 1; min-width: 0; }
+.player-score-item .name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-score-item .pts { font-size: 11px; color: #a8dadc; }
+.player-score-item .status { font-size: 14px; }
+
+/* Canvas panel */
+.canvas-panel {
+    flex: 1; display: flex; flex-direction: column;
+    background: #111122; overflow: hidden;
+}
+.game-topbar {
+    background: #0f3460; padding: 8px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border-bottom: 1px solid #16213e; flex-shrink: 0;
+}
+.round-badge { font-size: 12px; color: #a8dadc; }
+.hint-display {
+    font-size: 20px; font-weight: bold; letter-spacing: 6px;
+    color: white; text-align: center; flex: 1;
+    font-family: 'Courier New', monospace;
+}
+.timer-ring {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 3px solid #4caf50; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: bold; transition: border-color 0.5s, color 0.5s;
+    flex-shrink: 0;
+}
+.timer-ring.warn  { border-color: #ff9800; color: #ff9800; }
+.timer-ring.urgent { border-color: #e94560; color: #e94560; animation: timerPulse 0.5s infinite alternate; }
+@keyframes timerPulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+.canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 8px; }
+canvas#drawCanvas {
+    background: white; border-radius: 6px;
+    max-width: 100%; max-height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+}
+canvas#drawCanvas.watching { cursor: default; }
+
+.draw-toolbar {
+    background: #0a0a1a; padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    border-top: 1px solid #16213e; flex-shrink: 0;
+}
+.color-palette { display: flex; flex-wrap: wrap; gap: 3px; max-width: 160px; }
+.color-swatch {
+    width: 20px; height: 20px; border-radius: 4px; cursor: pointer;
+    border: 2px solid transparent; transition: transform 0.1s;
+}
+.color-swatch:hover { transform: scale(1.2); }
+.color-swatch.active { border-color: white; transform: scale(1.2); }
+.toolbar-sep { width: 1px; height: 36px; background: #16213e; flex-shrink: 0; }
+.size-btns { display: flex; align-items: center; gap: 6px; }
+.size-btn {
+    background: #16213e; border: 2px solid transparent; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.1s; flex-shrink: 0;
+}
+.size-btn.active { border-color: #e94560; }
+.size-btn:hover  { border-color: #a8dadc; }
+.size-dot { background: white; border-radius: 50%; pointer-events: none; }
+.tool-btns { display: flex; gap: 6px; }
+.tool-btn {
+    background: #16213e; border: 2px solid transparent; border-radius: 8px;
+    color: white; cursor: pointer; font-size: 12px; padding: 6px 10px;
+    transition: all 0.1s;
+}
+.tool-btn:hover { background: #0f3460; }
+.tool-btn.active { border-color: #e94560; background: #1a1040; }
+.drawer-hint { color: #a8dadc; font-size: 13px; text-align: center; padding: 6px; }
+
+/* Chat panel */
+.chat-panel {
+    width: 220px; min-width: 200px; background: #0a0a1a;
+    display: flex; flex-direction: column; border-left: 1px solid #16213e;
+}
+.chat-messages {
+    flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px;
+    font-size: 13px;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: #16213e; border-radius: 2px; }
+.chat-msg { padding: 5px 8px; border-radius: 6px; line-height: 1.4; word-break: break-word; }
+.chat-msg.system  { background: #0f1a2e; color: #a8dadc; font-style: italic; text-align: center; }
+.chat-msg.correct { background: #0a2e0a; color: #4caf50; font-weight: bold; }
+.chat-msg.close   { background: #2e2a0a; color: #ff9800; }
+.chat-msg.guess   { background: #16213e; }
+.chat-msg .who    { color: #e94560; font-weight: bold; font-size: 11px; }
+.chat-input-row   { display: flex; gap: 0; border-top: 1px solid #16213e; }
+.chat-input-row input {
+    flex: 1; background: #0f1a2e; border: none; color: white;
+    font-size: 13px; padding: 10px 12px; outline: none;
+}
+.chat-input-row input::placeholder { color: #555; }
+.chat-input-row button {
+    background: #e94560; border: none; color: white;
+    cursor: pointer; font-size: 13px; padding: 10px 12px;
+}
+.chat-input-row button:hover { background: #c73652; }
+
+/* ── Overlays ── */
+.overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.82);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.overlay.hidden { display: none; }
+.overlay-card {
+    background: #0f3460; border-radius: 16px; padding: 36px;
+    text-align: center; display: flex; flex-direction: column; gap: 18px;
+    border: 2px solid #e94560; max-width: 460px; width: 90%;
+    animation: popIn 0.25s ease-out;
+}
+@keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.overlay-card h2 { color: #e94560; font-size: 22px; }
+.overlay-card p  { color: #a8dadc; font-size: 15px; }
+.word-choices { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.word-choice-btn {
+    background: #16213e; border: 2px solid #0f3460; border-radius: 10px;
+    color: white; cursor: pointer; font-size: 16px; font-weight: bold;
+    padding: 12px 22px; transition: all 0.2s; text-transform: capitalize;
+}
+.word-choice-btn:hover { border-color: #e94560; background: #1a1040; color: #e94560; }
+.round-scores { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.rs-row {
+    display: flex; align-items: center; gap: 10px; background: #16213e;
+    border-radius: 8px; padding: 8px 14px;
+}
+.rs-name { flex: 1; font-size: 14px; }
+.rs-pts  { color: #4caf50; font-weight: bold; font-size: 14px; }
+
+/* ── End Screen ── */
+#end { justify-content: center; gap: 20px; padding: 40px 20px; min-height: 100vh; }
+.leaderboard-card {
+    background: #0f3460; border-radius: 16px; padding: 36px 44px;
+    display: flex; flex-direction: column; gap: 16px; min-width: 360px;
+}
+.leaderboard-card h2 { color: #e94560; font-size: 24px; text-align: center; }
+.lb-row {
+    display: flex; align-items: center; gap: 12px;
+    background: #16213e; border-radius: 10px; padding: 10px 16px;
+}
+.lb-rank { font-size: 22px; width: 32px; text-align: center; }
+.lb-name { flex: 1; font-size: 16px; }
+.lb-score { color: #4caf50; font-weight: bold; font-size: 16px; }
+.lb-row.rank-1 { background: #2a2000; border: 1px solid #ffd700; }
+.lb-row.rank-2 { background: #1a1a24; border: 1px solid #a8a8a8; }
+.lb-row.rank-3 { background: #1a100a; border: 1px solid #cd7f32; }
+.end-btns { display: flex; gap: 12px; justify-content: center; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ LOBBY -->
+<div id="lobby" class="screen active">
+    <div style="align-self:flex-start;padding:16px 24px;">
+        <a class="back-btn" href="https://shahmeer.me">← Back to Home</a>
+    </div>
+    <div class="logo">🎨 Draw &amp; <span>Guess</span></div>
+    <div class="card">
+        <h2>Create a Room</h2>
+        <div class="field-group">
+            <label>Your Username</label>
+            <input type="text" id="createUsername" maxlength="16" placeholder="Enter username">
+        </div>
+        <button class="btn" onclick="createRoom()">Create Room</button>
+    </div>
+    <div class="card">
+        <h2>Join a Room</h2>
+        <div class="field-group">
+            <label>Your Username</label>
+            <input type="text" id="joinUsername" maxlength="16" placeholder="Enter username">
+        </div>
+        <div class="field-group">
+            <label>Room Code</label>
+            <input type="text" id="joinCode" maxlength="4" placeholder="XXXX" style="letter-spacing:6px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <button class="btn" onclick="joinRoom()">Join Room</button>
+    </div>
+    <div class="error-msg" id="lobbyError"></div>
+</div>
+
+<!-- ═══════════════════════════════════ WAITING ROOM -->
+<div id="waiting" class="screen">
+    <div style="align-self:flex-start;padding:16px 24px;">
+        <a class="back-btn" href="https://shahmeer.me">← Back to Home</a>
+    </div>
+    <div class="waiting-card">
+        <h2>🎨 Draw &amp; Guess</h2>
+        <div class="code-row">
+            <p>Room Code — share with friends!</p>
+            <div class="code-big" id="waitingCode">????</div>
+        </div>
+        <div>
+            <div class="panel-header" style="border-radius:6px 6px 0 0;margin-bottom:0">Players (<span id="playerCount">1</span>/8)</div>
+            <div class="player-list-lobby" id="lobbyPlayerList"></div>
+        </div>
+        <div class="waiting-hint" id="waitingHint">Waiting for more players…</div>
+        <button class="btn" id="startBtn" disabled onclick="startGame()" style="display:none">Start Game 🎮</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ GAME -->
+<div id="game" class="screen">
+
+    <!-- Word-choosing overlay (drawer only) -->
+    <div id="chooseOverlay" class="overlay hidden">
+        <div class="overlay-card">
+            <h2>🎨 You're Drawing!</h2>
+            <p>Choose a word to draw:</p>
+            <div class="word-choices" id="wordChoices"></div>
+            <p id="chooseTimer" style="color:#555;font-size:13px">Auto-picks in 12s…</p>
+        </div>
+    </div>
+
+    <!-- Round-end overlay -->
+    <div id="roundEndOverlay" class="overlay hidden">
+        <div class="overlay-card">
+            <h2>Round Over!</h2>
+            <p>The word was: <strong id="revealWord" style="color:#e94560;font-size:20px"></strong></p>
+            <div class="round-scores" id="roundScores"></div>
+            <p style="color:#555;font-size:13px">Next round starting…</p>
+        </div>
+    </div>
+
+    <!-- Left: Player scores -->
+    <div class="player-panel">
+        <div class="panel-header">Players</div>
+        <div id="scoreList"></div>
+    </div>
+
+    <!-- Middle: Canvas -->
+    <div class="canvas-panel">
+        <div class="game-topbar">
+            <div class="round-badge">Round <span id="roundNum">1</span>/<span id="totalRounds">?</span></div>
+            <div class="hint-display" id="hintDisplay">? ? ? ? ?</div>
+            <div class="timer-ring" id="timerRing">80</div>
+        </div>
+        <div class="canvas-wrap">
+            <canvas id="drawCanvas" width="800" height="520"></canvas>
+        </div>
+        <!-- Drawer toolbar -->
+        <div class="draw-toolbar" id="drawToolbar" style="display:none">
+            <div class="color-palette" id="colorPalette"></div>
+            <div class="toolbar-sep"></div>
+            <div class="size-btns" id="sizeBtns"></div>
+            <div class="toolbar-sep"></div>
+            <div class="tool-btns">
+                <button class="tool-btn active" id="btnPen" onclick="setTool('pen')">✏️ Pen</button>
+                <button class="tool-btn" id="btnEraser" onclick="setTool('eraser')">🗑️ Eraser</button>
+                <button class="tool-btn" onclick="clearCanvas()">🧹 Clear</button>
+            </div>
+        </div>
+        <div class="drawer-hint" id="drawerWordHint" style="display:none"></div>
+    </div>
+
+    <!-- Right: Chat -->
+    <div class="chat-panel">
+        <div class="panel-header">💬 Chat &amp; Guesses</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+            <input type="text" id="guessInput" maxlength="100" placeholder="Type guess &amp; Enter…"
+                onkeydown="if(event.key==='Enter')sendGuess()">
+            <button onclick="sendGuess()">➤</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ END SCREEN -->
+<div id="end" class="screen">
+    <a class="back-btn" href="https://shahmeer.me" style="align-self:flex-start;padding:16px 24px;">← Back to Home</a>
+    <div class="leaderboard-card">
+        <h2>🏆 Final Scores</h2>
+        <div id="leaderboardRows"></div>
+        <div class="end-btns">
+            <button class="btn" onclick="location.reload()">Play Again</button>
+            <button class="btn-ghost" onclick="location.href='https://shahmeer.me'">Home</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const socket = io();
+
+// ─── Palette & tools ─────────────────────────────────────────────────────────
+const COLORS = [
+    '#000000','#ffffff','#808080','#c0c0c0',
+    '#ff0000','#9b0000','#ff6600','#ff9900',
+    '#ffff00','#00cc44','#006622','#00cccc',
+    '#0066ff','#6600cc','#ff00ff','#ff69b4',
+];
+const SIZES = [
+    { label: 'S', px: 3,  box: 28 },
+    { label: 'M', px: 8,  box: 32 },
+    { label: 'L', px: 16, box: 38 },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let myId        = null;
+let myRoom      = null;
+let imDrawing   = false;
+let currentColor = '#000000';
+let brushSize    = 5;
+let currentTool  = 'pen';
+
+// Drawing state
+const canvas = document.getElementById('drawCanvas');
+const ctx    = canvas.getContext('2d');
+let drawing  = false;
+let lastX = 0, lastY = 0;
+let points   = [];
+
+// ─── Screen helper ────────────────────────────────────────────────────────────
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+// ─── Lobby ───────────────────────────────────────────────────────────────────
+function createRoom() {
+    const username = document.getElementById('createUsername').value.trim();
+    if (!username) { showErr('Enter a username.'); return; }
+    socket.emit('draw-create', { username });
+}
+function joinRoom() {
+    const username = document.getElementById('joinUsername').value.trim();
+    const code     = document.getElementById('joinCode').value.trim().toUpperCase();
+    if (!username) { showErr('Enter a username.'); return; }
+    if (code.length !== 4) { showErr('Enter a 4-letter room code.'); return; }
+    socket.emit('draw-join', { username, code });
+}
+function showErr(msg) { document.getElementById('lobbyError').textContent = msg; }
+
+socket.on('draw-error', (msg) => {
+    showErr(msg);
+    // also show if in overlay
+});
+
+socket.on('draw-joined', ({ code, myId: id, room }) => {
+    myId   = id;
+    myRoom = code;
+    document.getElementById('waitingCode').textContent = code;
+    renderLobbyPlayers(room.players, room.host);
+    document.getElementById('startBtn').style.display = room.host === myId ? 'block' : 'none';
+    showScreen('waiting');
+});
+
+socket.on('draw-room-update', (room) => {
+    renderLobbyPlayers(room.players, room.host);
+    const startBtn = document.getElementById('startBtn');
+    if (room.host === myId) {
+        startBtn.style.display = 'block';
+        startBtn.disabled = room.players.length < 2;
+    }
+    document.getElementById('playerCount').textContent = room.players.length;
+    document.getElementById('waitingHint').textContent =
+        room.players.length < 2 ? 'Waiting for more players…' : 'Ready to start!';
+});
+
+function renderLobbyPlayers(players, host) {
+    document.getElementById('playerCount').textContent = players.length;
+    document.getElementById('lobbyPlayerList').innerHTML = players.map(p =>
+        `<div class="player-entry">
+            <span class="crown">${p.id === host ? '👑' : '👤'}</span>
+            <span>${escHtml(p.username)}</span>
+            ${p.id === myId ? '<span style="color:#555;font-size:11px;margin-left:auto">(you)</span>' : ''}
+        </div>`
+    ).join('');
+
+    const startBtn = document.getElementById('startBtn');
+    if (host === myId) {
+        startBtn.style.display = 'block';
+        startBtn.disabled = players.length < 2;
+    }
+    document.getElementById('waitingHint').textContent =
+        players.length < 2 ? 'Waiting for more players…' : 'Ready to start!';
+}
+
+function startGame() { socket.emit('draw-start'); }
+
+// ─── Build tools ─────────────────────────────────────────────────────────────
+function buildTools() {
+    // Color palette
+    const pal = document.getElementById('colorPalette');
+    pal.innerHTML = '';
+    COLORS.forEach(c => {
+        const s = document.createElement('div');
+        s.className = 'color-swatch' + (c === currentColor ? ' active' : '');
+        s.style.background = c;
+        s.style.border = c === '#ffffff' ? '2px solid #555' : '2px solid transparent';
+        s.onclick = () => { currentColor = c; setTool('pen'); buildTools(); };
+        pal.appendChild(s);
+    });
+    // Size buttons
+    const sb = document.getElementById('sizeBtns');
+    sb.innerHTML = '';
+    SIZES.forEach(sz => {
+        const b = document.createElement('div');
+        b.className = 'size-btn' + (sz.px === brushSize ? ' active' : '');
+        b.style.width  = sz.box + 'px';
+        b.style.height = sz.box + 'px';
+        const dot = document.createElement('div');
+        dot.className = 'size-dot';
+        dot.style.width  = sz.px + 'px';
+        dot.style.height = sz.px + 'px';
+        b.appendChild(dot);
+        b.onclick = () => { brushSize = sz.px; buildTools(); };
+        sb.appendChild(b);
+    });
+    // Tool active states
+    document.getElementById('btnPen').classList.toggle('active', currentTool === 'pen');
+    document.getElementById('btnEraser').classList.toggle('active', currentTool === 'eraser');
+}
+
+function setTool(tool) {
+    currentTool = tool;
+    buildTools();
+}
+
+// ─── Canvas drawing ───────────────────────────────────────────────────────────
+function canvasPos(e) {
+    const rect  = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const src = e.touches ? e.touches[0] : e;
+    return {
+        x: (src.clientX - rect.left) * scaleX,
+        y: (src.clientY - rect.top)  * scaleY,
+    };
+}
+
+function beginStroke(x, y) {
+    drawing = true;
+    points  = [{ x, y }];
+    ctx.beginPath();
+    ctx.arc(x, y, (currentTool === 'eraser' ? brushSize * 3 : brushSize) / 2, 0, Math.PI * 2);
+    ctx.fillStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+    ctx.fill();
+    emitStroke({ type: 'begin', x: x / canvas.width, y: y / canvas.height,
+        color: currentTool === 'eraser' ? '#ffffff' : currentColor,
+        size: currentTool === 'eraser' ? brushSize * 3 : brushSize });
+}
+
+function moveStroke(x, y) {
+    if (!drawing) return;
+    points.push({ x, y });
+
+    ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+    ctx.lineWidth   = currentTool === 'eraser' ? brushSize * 3 : brushSize;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+
+    if (points.length >= 3) {
+        const p1 = points[points.length - 3];
+        const p2 = points[points.length - 2];
+        const p3 = points[points.length - 1];
+        const mx1 = (p1.x + p2.x) / 2, my1 = (p1.y + p2.y) / 2;
+        const mx2 = (p2.x + p3.x) / 2, my2 = (p2.y + p3.y) / 2;
+        ctx.beginPath();
+        ctx.moveTo(mx1, my1);
+        ctx.quadraticCurveTo(p2.x, p2.y, mx2, my2);
+        ctx.stroke();
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(points[points.length - 2].x, points[points.length - 2].y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+
+    emitStroke({ type: 'move', x: x / canvas.width, y: y / canvas.height,
+        color: currentTool === 'eraser' ? '#ffffff' : currentColor,
+        size: currentTool === 'eraser' ? brushSize * 3 : brushSize });
+}
+
+function endStroke() {
+    drawing = false;
+    points  = [];
+    emitStroke({ type: 'end' });
+}
+
+function emitStroke(data) {
+    if (imDrawing) socket.emit('draw-stroke', data);
+}
+
+// Mouse
+canvas.addEventListener('mousedown',  e => { if (!imDrawing) return; e.preventDefault(); const p = canvasPos(e); beginStroke(p.x, p.y); });
+canvas.addEventListener('mousemove',  e => { if (!imDrawing) return; e.preventDefault(); const p = canvasPos(e); moveStroke(p.x, p.y); });
+canvas.addEventListener('mouseup',    e => { if (!imDrawing) return; endStroke(); });
+canvas.addEventListener('mouseleave', e => { if (!imDrawing) return; if (drawing) endStroke(); });
+// Touch
+canvas.addEventListener('touchstart', e => { if (!imDrawing) return; e.preventDefault(); const p = canvasPos(e); beginStroke(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchmove',  e => { if (!imDrawing) return; e.preventDefault(); const p = canvasPos(e); moveStroke(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchend',   e => { if (!imDrawing) return; endStroke(); });
+
+// Receive drawing from server
+let rxPoints = [];
+socket.on('draw-stroke', ({ type, x, y, color, size }) => {
+    const px = x * canvas.width, py = y * canvas.height;
+    if (type === 'begin') {
+        rxPoints = [{ x: px, y: py }];
+        ctx.beginPath();
+        ctx.arc(px, py, size / 2, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+    } else if (type === 'move') {
+        rxPoints.push({ x: px, y: py });
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = size;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        if (rxPoints.length >= 3) {
+            const p1 = rxPoints[rxPoints.length - 3];
+            const p2 = rxPoints[rxPoints.length - 2];
+            const p3 = rxPoints[rxPoints.length - 1];
+            const mx1 = (p1.x + p2.x) / 2, my1 = (p1.y + p2.y) / 2;
+            const mx2 = (p2.x + p3.x) / 2, my2 = (p2.y + p3.y) / 2;
+            ctx.beginPath();
+            ctx.moveTo(mx1, my1);
+            ctx.quadraticCurveTo(p2.x, p2.y, mx2, my2);
+            ctx.stroke();
+        } else if (rxPoints.length >= 2) {
+            const prev = rxPoints[rxPoints.length - 2];
+            ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(px, py); ctx.stroke();
+        }
+    } else {
+        rxPoints = [];
+    }
+});
+
+socket.on('draw-clear', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+});
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    socket.emit('draw-clear');
+}
+
+// ─── Game phases ──────────────────────────────────────────────────────────────
+socket.on('draw-starting', () => {
+    // Init canvas white
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    showScreen('game');
+    addChat({ type: 'system', text: 'Game starting! Get ready…' });
+});
+
+socket.on('draw-phase-choosing', ({ drawer }) => {
+    imDrawing = false;
+    canvas.classList.add('watching');
+    document.getElementById('drawToolbar').style.display  = 'none';
+    document.getElementById('drawerWordHint').style.display = 'none';
+    document.getElementById('hintDisplay').textContent = '…choosing…';
+    document.getElementById('timerRing').textContent   = '…';
+    document.getElementById('timerRing').className = 'timer-ring';
+    document.getElementById('roundEndOverlay').classList.add('hidden');
+    addChat({ type: 'system', text: `${escHtml(drawer.username)} is choosing a word…` });
+});
+
+socket.on('draw-word-choices', ({ words }) => {
+    const el = document.getElementById('wordChoices');
+    el.innerHTML = '';
+    words.forEach(w => {
+        const b = document.createElement('button');
+        b.className = 'word-choice-btn';
+        b.textContent = w;
+        b.onclick = () => {
+            socket.emit('draw-choose-word', { word: w });
+            document.getElementById('chooseOverlay').classList.add('hidden');
+        };
+        el.appendChild(b);
+    });
+    // Countdown
+    let t = 12;
+    document.getElementById('chooseTimer').textContent = `Auto-picks in ${t}s…`;
+    const ci = setInterval(() => {
+        t--;
+        document.getElementById('chooseTimer').textContent = `Auto-picks in ${t}s…`;
+        if (t <= 0) clearInterval(ci);
+    }, 1000);
+    document.getElementById('chooseOverlay').classList.remove('hidden');
+});
+
+socket.on('draw-phase-drawing', ({ drawer, hint, timeLeft, totalRounds, round }) => {
+    document.getElementById('chooseOverlay').classList.add('hidden');
+    document.getElementById('roundEndOverlay').classList.add('hidden');
+    document.getElementById('roundNum').textContent   = round;
+    document.getElementById('totalRounds').textContent = totalRounds;
+    document.getElementById('hintDisplay').textContent = hint;
+    document.getElementById('timerRing').textContent  = timeLeft;
+    document.getElementById('timerRing').className    = 'timer-ring';
+
+    // Clear canvas
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    imDrawing = (drawer.id === myId);
+    if (imDrawing) {
+        canvas.classList.remove('watching');
+        document.getElementById('drawToolbar').style.display = 'flex';
+        buildTools();
+        addChat({ type: 'system', text: `You are drawing!` });
+    } else {
+        canvas.classList.add('watching');
+        document.getElementById('drawToolbar').style.display = 'none';
+        document.getElementById('drawerWordHint').style.display = 'none';
+        addChat({ type: 'system', text: `${escHtml(drawer.username)} is drawing!` });
+    }
+});
+
+socket.on('draw-your-word', ({ word }) => {
+    document.getElementById('hintDisplay').textContent = word.toUpperCase();
+    document.getElementById('drawerWordHint').style.display = 'block';
+    document.getElementById('drawerWordHint').textContent   = `You're drawing: "${word}"`;
+});
+
+socket.on('draw-tick', ({ timeLeft }) => {
+    const el = document.getElementById('timerRing');
+    el.textContent = timeLeft;
+    el.className = timeLeft <= 15 ? 'timer-ring urgent' : timeLeft <= 40 ? 'timer-ring warn' : 'timer-ring';
+});
+
+socket.on('draw-hint', ({ hint }) => {
+    if (!imDrawing) document.getElementById('hintDisplay').textContent = hint;
+    addChat({ type: 'system', text: `Hint: ${hint}` });
+});
+
+socket.on('draw-score-update', ({ scores }) => renderScores(scores));
+
+socket.on('draw-phase-round-end', ({ word, scores }) => {
+    document.getElementById('revealWord').textContent = word;
+    const rs = document.getElementById('roundScores');
+    const sorted = [...scores].sort((a,b) => b.score - a.score);
+    rs.innerHTML = sorted.map(p =>
+        `<div class="rs-row">
+            <span class="rs-name">${escHtml(p.username)}</span>
+            <span class="rs-pts">${p.score} pts</span>
+        </div>`
+    ).join('');
+    document.getElementById('roundEndOverlay').classList.remove('hidden');
+    renderScores(scores);
+    imDrawing = false;
+    canvas.classList.add('watching');
+    document.getElementById('drawToolbar').style.display = 'none';
+    document.getElementById('drawerWordHint').style.display = 'none';
+});
+
+socket.on('draw-game-end', ({ leaderboard }) => {
+    const container = document.getElementById('leaderboardRows');
+    const medals = ['🥇','🥈','🥉'];
+    container.innerHTML = leaderboard.map(p =>
+        `<div class="lb-row rank-${p.rank}">
+            <div class="lb-rank">${medals[p.rank-1] || p.rank}</div>
+            <div class="lb-name">${escHtml(p.username)}</div>
+            <div class="lb-score">${p.score} pts</div>
+        </div>`
+    ).join('');
+    showScreen('end');
+});
+
+socket.on('draw-correct', ({ pts }) => {
+    addChat({ type: 'system', text: `🎉 Correct! +${pts} points` });
+});
+
+// ─── Score list ───────────────────────────────────────────────────────────────
+function renderScores(scores) {
+    const sorted = [...scores].sort((a,b) => b.score - a.score);
+    document.getElementById('scoreList').innerHTML = sorted.map(p => {
+        const initials = p.username.substring(0, 2).toUpperCase();
+        return `<div class="player-score-item${p.isDrawing ? ' is-drawing' : ''}">
+            <div class="av">${initials}</div>
+            <div class="info">
+                <div class="name">${escHtml(p.username)}${p.id === myId ? ' <span style="color:#555;font-size:10px">(you)</span>' : ''}</div>
+                <div class="pts">${p.score} pts</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+socket.on('draw-chat', (msg) => addChat(msg));
+
+function addChat(msg) {
+    const box = document.getElementById('chatMessages');
+    const el  = document.createElement('div');
+    if (msg.type === 'system') {
+        el.className = 'chat-msg system';
+        el.textContent = msg.text;
+    } else if (msg.type === 'correct') {
+        el.className = 'chat-msg correct';
+        el.textContent = msg.text;
+    } else if (msg.type === 'guess') {
+        el.className = 'chat-msg' + (msg.isClose ? ' close' : ' guess');
+        el.innerHTML = `<span class="who">${escHtml(msg.username)}:</span> ${escHtml(msg.text)}`
+            + (msg.isClose ? ' <span style="font-size:11px;color:#ff9800">🔥 close!</span>' : '');
+    } else {
+        el.className = 'chat-msg guess';
+        el.innerHTML = `<span class="who">${escHtml(msg.username || 'System')}:</span> ${escHtml(msg.text)}`;
+    }
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+}
+
+function sendGuess() {
+    const input = document.getElementById('guessInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    socket.emit('draw-guess', { text });
+}
+
+function escHtml(s = '') {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Enter key for lobby inputs
+document.getElementById('createUsername').addEventListener('keydown', e => { if (e.key === 'Enter') createRoom(); });
+document.getElementById('joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
+</script>
+</body>
+</html>

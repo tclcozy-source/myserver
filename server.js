@@ -41,8 +41,166 @@ app.get('/about',      (req, res) => res.sendFile(path.join(__dirname, 'public',
 app.get('/messages',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'messages.html')));
 app.get('/contact',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
 app.get('/battleship', (req, res) => res.sendFile(path.join(__dirname, 'public', 'battleship.html')));
+app.get('/drawing',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'drawing.html')));
 
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, 'public', '404.html')));
+
+// ─── Drawing Game Logic ───────────────────────────────────────────────────────
+const DRAW_WORDS = [
+    'cat','dog','fish','bird','tree','sun','moon','star','house','car','boat',
+    'plane','train','bike','apple','banana','pizza','cake','ice cream','guitar',
+    'piano','drum','elephant','giraffe','penguin','dolphin','shark','mountain',
+    'volcano','rainbow','cloud','lightning','castle','tower','bridge','lighthouse',
+    'rocket','robot','alien','astronaut','crown','sword','shield','snowman',
+    'pumpkin','cactus','mushroom','skateboard','submarine','telescope','compass',
+    'butterfly','scorpion','octopus','crab','turtle','waterfall','tornado',
+    'diamond','trophy','basketball','football','tennis','firework','balloon',
+    'umbrella','kite','candle','lantern','hourglass','pirate','ninja','wizard',
+    'knight','spaceship','satellite','comet','sushi','taco','hot dog','burger',
+    'microscope','blizzard','tornado','sunrise','campfire','igloo','hammock',
+    'helicopter','parachute','surfboard','bowling','archery','chess','popcorn',
+    'doughnut','watermelon','pineapple','broccoli','flamingo','peacock','seahorse',
+    'mermaid','dragon','unicorn','vampire','zombie','witch','superhero','detective',
+];
+
+const drawRooms = {};
+
+function genDrawCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
+
+function getWordHint(word, revealedIndices) {
+    return word.split('').map((c, i) =>
+        c === ' ' ? '/' : (revealedIndices.includes(i) ? c : '_')
+    ).join(' ');
+}
+
+function pickWords() {
+    return [...DRAW_WORDS].sort(() => Math.random() - 0.5).slice(0, 3);
+}
+
+function drawRoomState(room) {
+    return {
+        code: room.code, host: room.host, phase: room.phase,
+        players: room.players.map(p => ({ id: p.id, username: p.username, score: p.score, hasDrawn: p.hasDrawn })),
+    };
+}
+
+function levenshtein(a, b) {
+    const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+    for (let i = 1; i <= a.length; i++)
+        for (let j = 1; j <= b.length; j++)
+            dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    return dp[a.length][b.length];
+}
+
+function startChoosingPhase(code) {
+    const room = drawRooms[code];
+    if (!room) return;
+
+    // Find next undrawn player
+    const drawer = room.players[room.drawerIndex];
+    if (!drawer) { endDrawGame(code); return; }
+
+    room.currentDrawer = drawer.id;
+    room.phase         = 'choosing';
+    room.wordChoices   = pickWords();
+    room.correctGuessers = [];
+
+    io.to(code).emit('draw-phase-choosing', {
+        drawer: { id: drawer.id, username: drawer.username }
+    });
+    io.to(drawer.id).emit('draw-word-choices', { words: room.wordChoices });
+
+    room.chooseTimeout = setTimeout(() => {
+        if (room.phase === 'choosing' && drawRooms[code]) startDrawingPhase(code, room.wordChoices[0]);
+    }, 12000);
+}
+
+function startDrawingPhase(code, word) {
+    const room = drawRooms[code];
+    if (!room) return;
+    clearTimeout(room.chooseTimeout);
+
+    room.currentWord    = word;
+    room.phase          = 'drawing';
+    room.timeLeft       = 80;
+    room.hintRevealed   = [];
+    room.correctGuessers = [];
+
+    const drawer = room.players.find(p => p.id === room.currentDrawer);
+    io.to(code).emit('draw-phase-drawing', {
+        drawer:     { id: room.currentDrawer, username: drawer?.username },
+        hint:       getWordHint(word, []),
+        timeLeft:   80,
+        totalRounds: room.players.length,
+        round:      room.drawerIndex + 1,
+    });
+    io.to(room.currentDrawer).emit('draw-your-word', { word });
+
+    room.timer = setInterval(() => {
+        if (!drawRooms[code]) { clearInterval(room.timer); return; }
+        room.timeLeft--;
+
+        if (room.timeLeft === 40 && room.hintRevealed.length === 0) {
+            const firstIdx = room.currentWord.split('').findIndex(c => c !== ' ');
+            if (firstIdx >= 0) {
+                room.hintRevealed.push(firstIdx);
+                io.to(code).emit('draw-hint', { hint: getWordHint(room.currentWord, room.hintRevealed) });
+            }
+        }
+
+        const guessers   = room.players.filter(p => p.id !== room.currentDrawer);
+        const allGuessed = guessers.length > 0 && guessers.every(p => room.correctGuessers.includes(p.id));
+
+        if (room.timeLeft <= 0 || allGuessed) {
+            clearInterval(room.timer);
+            endDrawRound(code);
+        } else {
+            io.to(code).emit('draw-tick', { timeLeft: room.timeLeft });
+        }
+    }, 1000);
+}
+
+function endDrawRound(code) {
+    const room = drawRooms[code];
+    if (!room) return;
+    clearInterval(room.timer);
+    room.phase = 'round-end';
+
+    const drawer = room.players.find(p => p.id === room.currentDrawer);
+    if (drawer) drawer.hasDrawn = true;
+
+    io.to(code).emit('draw-phase-round-end', {
+        word:   room.currentWord,
+        scores: room.players.map(p => ({ id: p.id, username: p.username, score: p.score })),
+    });
+
+    setTimeout(() => {
+        if (!drawRooms[code]) return;
+        room.drawerIndex++;
+        if (room.drawerIndex >= room.players.length) {
+            endDrawGame(code);
+        } else {
+            io.to(code).emit('draw-clear');
+            startChoosingPhase(code);
+        }
+    }, 5000);
+}
+
+function endDrawGame(code) {
+    const room = drawRooms[code];
+    if (!room) return;
+    room.phase = 'game-end';
+    const leaderboard = [...room.players]
+        .sort((a, b) => b.score - a.score)
+        .map((p, i) => ({ rank: i + 1, username: p.username, score: p.score }));
+    io.to(code).emit('draw-game-end', { leaderboard });
+}
 
 // ─── Battleship Game Logic ────────────────────────────────────────────────────
 const rooms = {};
@@ -187,10 +345,130 @@ io.on('connection', (socket) => {
 
     // ── Player disconnects ─────────────────────────────────────────────────────
     socket.on('disconnect', () => {
+        // Battleship cleanup
         const code = socket.roomCode;
-        if (!code || !rooms[code]) return;
-        io.to(code).emit('player-disconnected');
-        delete rooms[code];
+        if (code && rooms[code]) {
+            io.to(code).emit('player-disconnected');
+            delete rooms[code];
+        }
+        // Drawing game cleanup
+        const dcode = socket.drawRoom;
+        const droom = dcode && drawRooms[dcode];
+        if (droom) {
+            droom.players = droom.players.filter(p => p.id !== socket.id);
+            if (droom.players.length === 0) {
+                clearInterval(droom.timer);
+                clearTimeout(droom.chooseTimeout);
+                delete drawRooms[dcode];
+            } else {
+                if (droom.host === socket.id) droom.host = droom.players[0].id;
+                io.to(dcode).emit('draw-room-update', drawRoomState(droom));
+                io.to(dcode).emit('draw-chat', { type: 'system', text: `A player disconnected.` });
+                // If current drawer left during drawing, end round early
+                if (droom.currentDrawer === socket.id && droom.phase === 'drawing') {
+                    clearInterval(droom.timer);
+                    endDrawRound(dcode);
+                }
+            }
+        }
+    });
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // ─── Drawing Game Socket Handlers ────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════════
+
+    socket.on('draw-create', ({ username }) => {
+        let code;
+        do { code = genDrawCode(); } while (drawRooms[code] || rooms[code]);
+
+        drawRooms[code] = {
+            code, host: socket.id, phase: 'lobby',
+            players: [{ id: socket.id, username, score: 0, hasDrawn: false }],
+            drawerIndex: 0, currentDrawer: null, currentWord: null,
+            wordChoices: [], timeLeft: 0, hintRevealed: [],
+            correctGuessers: [], timer: null, chooseTimeout: null,
+        };
+
+        socket.join(code);
+        socket.drawRoom = code;
+        socket.emit('draw-joined', { code, myId: socket.id, room: drawRoomState(drawRooms[code]) });
+    });
+
+    socket.on('draw-join', ({ code, username }) => {
+        const c    = code.toUpperCase();
+        const room = drawRooms[c];
+        if (!room)                    return socket.emit('draw-error', 'Room not found.');
+        if (room.phase !== 'lobby')   return socket.emit('draw-error', 'Game already started.');
+        if (room.players.length >= 8) return socket.emit('draw-error', 'Room is full (8 max).');
+        if (room.players.some(p => p.username.toLowerCase() === username.toLowerCase()))
+            return socket.emit('draw-error', 'Username taken in this room.');
+
+        room.players.push({ id: socket.id, username, score: 0, hasDrawn: false });
+        socket.join(c);
+        socket.drawRoom = c;
+
+        socket.emit('draw-joined', { code: c, myId: socket.id, room: drawRoomState(room) });
+        socket.to(c).emit('draw-room-update', drawRoomState(room));
+        io.to(c).emit('draw-chat', { type: 'system', text: `${username} joined!` });
+    });
+
+    socket.on('draw-start', () => {
+        const room = drawRooms[socket.drawRoom];
+        if (!room || room.host !== socket.id)   return;
+        if (room.players.length < 2)            return socket.emit('draw-error', 'Need at least 2 players.');
+        if (room.phase !== 'lobby')             return;
+        room.phase       = 'starting';
+        room.drawerIndex = 0;
+        io.to(room.code).emit('draw-starting');
+        setTimeout(() => { if (drawRooms[room.code]) startChoosingPhase(room.code); }, 1500);
+    });
+
+    socket.on('draw-choose-word', ({ word }) => {
+        const room = drawRooms[socket.drawRoom];
+        if (!room || room.currentDrawer !== socket.id || room.phase !== 'choosing') return;
+        if (!room.wordChoices.includes(word)) return;
+        startDrawingPhase(room.code, word);
+    });
+
+    socket.on('draw-stroke', (data) => {
+        const room = drawRooms[socket.drawRoom];
+        if (!room || room.currentDrawer !== socket.id || room.phase !== 'drawing') return;
+        socket.to(room.code).emit('draw-stroke', data);
+    });
+
+    socket.on('draw-clear', () => {
+        const room = drawRooms[socket.drawRoom];
+        if (!room || room.currentDrawer !== socket.id) return;
+        io.to(room.code).emit('draw-clear');
+    });
+
+    socket.on('draw-guess', ({ text }) => {
+        const room = drawRooms[socket.drawRoom];
+        if (!room || room.phase !== 'drawing') return;
+        if (room.currentDrawer === socket.id)  return;
+
+        const player = room.players.find(p => p.id === socket.id);
+        if (!player || room.correctGuessers.includes(socket.id)) return;
+
+        const guess = text.trim().toLowerCase();
+        const word  = room.currentWord.toLowerCase();
+
+        if (guess === word) {
+            const pts = Math.max(50, Math.round(500 * (room.timeLeft / 80)));
+            player.score += pts;
+            room.correctGuessers.push(socket.id);
+            const drawer = room.players.find(p => p.id === room.currentDrawer);
+            if (drawer) drawer.score += 30;
+
+            io.to(room.code).emit('draw-chat', { type: 'correct', text: `${player.username} guessed it! (+${pts} pts)` });
+            socket.emit('draw-correct', { pts });
+            io.to(room.code).emit('draw-score-update', {
+                scores: room.players.map(p => ({ id: p.id, username: p.username, score: p.score }))
+            });
+        } else {
+            const isClose = levenshtein(guess, word) === 1;
+            io.to(room.code).emit('draw-chat', { type: 'guess', username: player.username, text: text.trim().substring(0, 100), isClose });
+        }
     });
 });
 
