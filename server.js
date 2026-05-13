@@ -98,12 +98,16 @@ function levenshtein(a, b) {
     return dp[a.length][b.length];
 }
 
+const ROUNDS_PER_PLAYER = 8;
+
 function startChoosingPhase(code) {
     const room = drawRooms[code];
     if (!room) return;
 
-    // Find next undrawn player
-    const drawer = room.players[room.drawerIndex];
+    if (room.drawerIndex >= room.players.length * ROUNDS_PER_PLAYER) { endDrawGame(code); return; }
+
+    // Cycle through players repeatedly
+    const drawer = room.players[room.drawerIndex % room.players.length];
     if (!drawer) { endDrawGame(code); return; }
 
     room.currentDrawer = drawer.id;
@@ -134,11 +138,11 @@ function startDrawingPhase(code, word) {
 
     const drawer = room.players.find(p => p.id === room.currentDrawer);
     io.to(code).emit('draw-phase-drawing', {
-        drawer:     { id: room.currentDrawer, username: drawer?.username },
-        hint:       getWordHint(word, []),
-        timeLeft:   80,
-        totalRounds: room.players.length,
-        round:      room.drawerIndex + 1,
+        drawer:      { id: room.currentDrawer, username: drawer?.username },
+        hint:        getWordHint(word, []),
+        timeLeft:    80,
+        totalRounds: ROUNDS_PER_PLAYER,
+        round:       Math.floor(room.drawerIndex / room.players.length) + 1,
     });
     io.to(room.currentDrawer).emit('draw-your-word', { word });
 
@@ -172,9 +176,6 @@ function endDrawRound(code) {
     clearInterval(room.timer);
     room.phase = 'round-end';
 
-    const drawer = room.players.find(p => p.id === room.currentDrawer);
-    if (drawer) drawer.hasDrawn = true;
-
     io.to(code).emit('draw-phase-round-end', {
         word:   room.currentWord,
         scores: room.players.map(p => ({ id: p.id, username: p.username, score: p.score })),
@@ -183,12 +184,8 @@ function endDrawRound(code) {
     setTimeout(() => {
         if (!drawRooms[code]) return;
         room.drawerIndex++;
-        if (room.drawerIndex >= room.players.length) {
-            endDrawGame(code);
-        } else {
-            io.to(code).emit('draw-clear');
-            startChoosingPhase(code);
-        }
+        io.to(code).emit('draw-clear');
+        startChoosingPhase(code);
     }, 5000);
 }
 
