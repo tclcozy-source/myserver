@@ -5,12 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shahmeer's Server</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        .nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+        .games-section { margin-top: 50px; width: 100%; max-width: 600px; padding: 0 20px; }
+        .games-section h2 { color: #a8dadc; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+        .game-card {
+            background: #0f3460;
+            border-radius: 16px;
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            text-decoration: none;
+            color: white;
+            border: 2px solid transparent;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .game-card:hover { border-color: #e94560; transform: translateY(-3px); }
+        .game-icon { font-size: 52px; flex-shrink: 0; }
+        .game-info { text-align: left; }
+        .game-info h3 { font-size: 22px; color: white; margin-bottom: 6px; }
+        .game-info p  { color: #a8dadc; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+        .game-tag {
+            display: inline-block;
+            background: #16213e;
+            color: #e94560;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-right: 6px;
+            text-transform: uppercase;
+        }
+    </style>
 </head>
 <body>
     <h1>Shahmeer's Server</h1>
     <p>Built with Node.js and Express</p>
-    <a class="btn" href="/about">About Me</a>
-    <a class="btn" href="/contact">Contact</a>
-    <a class="btn" href="/battleship">⚓ Battleship</a>
+    <div class="nav">
+        <a class="btn" href="/about">About Me</a>
+        <a class="btn" href="/contact">Contact</a>
+    </div>
+
+    <div class="games-section">
+        <h2>🎮 Games</h2>
+        <a class="game-card" href="/battleship">
+            <div class="game-icon">⚓</div>
+            <div class="game-info">
+                <h3>Battleship</h3>
+                <p>Real-time multiplayer naval combat. Create a room, share the code with a friend, place your fleet and sink theirs!</p>
+                <span class="game-tag">Multiplayer</span>
+                <span class="game-tag">Real-time</span>
+            </div>
+        </a>
+    </div>
 </body>
 </html>

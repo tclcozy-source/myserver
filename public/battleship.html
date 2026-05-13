@@ -26,128 +26,90 @@ body {
 .back { color: #a8dadc; text-decoration: none; align-self: flex-start; padding: 16px 24px; font-size: 14px; }
 .back:hover { color: #e94560; }
 
+/* ── Buttons ── */
+.btn {
+    background: #e94560; border: none; border-radius: 10px;
+    color: white; cursor: pointer; font-size: 16px; font-weight: bold;
+    padding: 12px 24px; transition: background 0.2s;
+}
+.btn:hover { background: #c73652; }
+.btn:disabled { background: #555; cursor: not-allowed; }
+.btn-secondary {
+    background: #0f3460; border: 2px solid #e94560; border-radius: 10px;
+    color: #e94560; cursor: pointer; font-size: 14px;
+    padding: 8px 18px; transition: all 0.2s;
+}
+.btn-secondary:hover { background: #e94560; color: white; }
+.error-msg { color: #e94560; font-size: 14px; text-align: center; min-height: 20px; }
+
+/* ── Tutorial Modal ── */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+    background: #0f3460; border-radius: 16px;
+    padding: 36px; max-width: 500px; width: 100%;
+    display: flex; flex-direction: column; gap: 22px;
+    border: 2px solid #e94560;
+    animation: popIn 0.3s ease-out;
+}
+@keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+.modal h2 { color: #e94560; text-align: center; font-size: 26px; }
+.tutorial-steps { display: flex; flex-direction: column; gap: 14px; }
+.tut-step { display: flex; gap: 14px; align-items: flex-start; background: #16213e; border-radius: 10px; padding: 12px 14px; }
+.tut-icon { font-size: 26px; flex-shrink: 0; line-height: 1; }
+.tut-step strong { color: white; display: block; margin-bottom: 3px; font-size: 15px; }
+.tut-step p { color: #a8dadc; font-size: 13px; line-height: 1.5; }
+.modal .btn { align-self: center; padding: 14px 36px; font-size: 17px; }
+
 /* ── Lobby ── */
 #lobby { justify-content: center; padding: 40px 20px; gap: 30px; }
 .logo { font-size: 52px; font-weight: bold; color: #e94560; text-align: center; }
 .logo span { color: white; }
 .card {
-    background: #0f3460;
-    border-radius: 14px;
-    padding: 30px 36px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    width: 320px;
+    background: #0f3460; border-radius: 14px;
+    padding: 30px 36px; display: flex; flex-direction: column; gap: 14px; width: 320px;
 }
 .card h2 { color: #a8dadc; font-size: 18px; text-align: center; margin-bottom: 6px; }
 .divider { text-align: center; color: #555; margin: 4px 0; }
 input[type="text"] {
-    background: #16213e;
-    border: 2px solid #16213e;
-    border-radius: 8px;
-    color: white;
-    font-size: 20px;
-    padding: 10px 14px;
-    text-align: center;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    width: 100%;
+    background: #16213e; border: 2px solid #16213e; border-radius: 8px;
+    color: white; font-size: 20px; padding: 10px 14px;
+    text-align: center; letter-spacing: 6px; text-transform: uppercase; width: 100%;
 }
 input[type="text"]:focus { outline: none; border-color: #e94560; }
-.btn {
-    background: #e94560;
-    border: none;
-    border-radius: 10px;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 12px 24px;
-    transition: background 0.2s;
-}
-.btn:hover { background: #c73652; }
-.btn:disabled { background: #555; cursor: not-allowed; }
-.btn-secondary {
-    background: #0f3460;
-    border: 2px solid #e94560;
-    border-radius: 10px;
-    color: #e94560;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 8px 18px;
-    transition: all 0.2s;
-}
-.btn-secondary:hover { background: #e94560; color: white; }
-.error-msg { color: #e94560; font-size: 14px; text-align: center; min-height: 20px; }
 
 /* ── Waiting ── */
 #waiting { justify-content: center; gap: 20px; padding: 60px 20px; }
-.room-code-box {
-    background: #0f3460;
-    border-radius: 14px;
-    padding: 30px 40px;
-    text-align: center;
-}
+.room-code-box { background: #0f3460; border-radius: 14px; padding: 30px 40px; text-align: center; }
 .room-code-box p { color: #a8dadc; margin-bottom: 12px; }
-.code-display {
-    font-size: 52px;
-    font-weight: bold;
-    color: #e94560;
-    letter-spacing: 12px;
-    margin-bottom: 12px;
-}
+.code-display { font-size: 52px; font-weight: bold; color: #e94560; letter-spacing: 12px; margin-bottom: 12px; }
 .pulse { animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 /* ── Placement ── */
 #placement { padding: 20px; gap: 16px; }
 #placement h2 { color: #e94560; font-size: 22px; }
-.placement-layout {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-.ship-list {
-    background: #0f3460;
-    border-radius: 12px;
-    padding: 16px;
-    min-width: 180px;
-}
+.placement-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+.ship-list { background: #0f3460; border-radius: 12px; padding: 16px; min-width: 180px; }
 .ship-list h3 { color: #a8dadc; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
 .ship-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    margin-bottom: 6px;
-    font-size: 14px;
-    transition: background 0.2s;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; font-size: 14px; transition: background 0.2s;
 }
 .ship-item.current { background: #16213e; border: 1px solid #e94560; }
 .ship-item.placed { opacity: 0.4; }
-.ship-preview {
-    display: flex;
-    gap: 2px;
-}
-.ship-dot {
-    width: 10px; height: 10px;
-    border-radius: 2px;
-}
-.placement-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-}
-.placement-controls p {
-    color: #a8dadc;
-    font-size: 13px;
-    text-align: center;
-    max-width: 220px;
-}
+.ship-preview { display: flex; gap: 2px; }
+.ship-dot { width: 10px; height: 10px; border-radius: 2px; }
+.placement-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.placement-controls p { color: #a8dadc; font-size: 13px; text-align: center; max-width: 220px; }
 
 /* ── Grid ── */
 .grid-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -156,76 +118,65 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
     display: grid;
     grid-template-columns: repeat(10, 36px);
     grid-template-rows: repeat(10, 36px);
-    gap: 2px;
-    background: #16213e;
-    padding: 6px;
-    border-radius: 8px;
-    user-select: none;
+    gap: 2px; background: #16213e; padding: 6px;
+    border-radius: 8px; user-select: none;
 }
 .cell {
-    width: 36px; height: 36px;
-    background: #0f3460;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background 0.1s;
+    width: 36px; height: 36px; background: #0f3460; border-radius: 3px;
+    cursor: pointer; transition: background 0.1s;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
+    font-size: 16px; position: relative; overflow: visible;
 }
 .cell.ship     { background: #1e4976; }
-.cell.hit      { background: #e94560; }
+.cell.hit      { background: #c0392b; }
 .cell.miss     { background: #2a4a5e; }
-.cell.sunk     { background: #8b0000; }
+.cell.sunk     { background: #7b0000; }
 .cell.preview-valid   { background: rgba(100, 200, 100, 0.5); }
 .cell.preview-invalid { background: rgba(233, 69, 96, 0.4); }
 .cell.enemy:hover:not(.hit):not(.miss):not(.sunk) { background: rgba(233, 69, 96, 0.3); cursor: crosshair; }
-.cell.no-click { cursor: default; }
+
+/* ── Explosion animation ── */
+@keyframes boom {
+    0%   { transform: scale(1);   filter: brightness(1)   drop-shadow(0 0 0px #e94560); }
+    20%  { transform: scale(1.6); filter: brightness(5)   drop-shadow(0 0 8px #ff6b35); }
+    45%  { transform: scale(1.3); filter: brightness(3)   drop-shadow(0 0 6px #e94560); }
+    70%  { transform: scale(1.1); filter: brightness(1.8) drop-shadow(0 0 4px #e94560); }
+    100% { transform: scale(1);   filter: brightness(1)   drop-shadow(0 0 2px #c0392b); }
+}
+@keyframes smoke-pulse {
+    0%,100% { box-shadow: 0 0 4px 1px rgba(233,69,96,0.3); }
+    50%      { box-shadow: 0 0 10px 3px rgba(233,69,96,0.6); }
+}
+.cell.hit {
+    animation: smoke-pulse 2s ease-in-out infinite;
+}
+.cell.exploding {
+    animation: boom 0.55s ease-out forwards, smoke-pulse 2s ease-in-out 0.55s infinite !important;
+    z-index: 10;
+}
 
 /* ── Game screen ── */
 #game { padding: 16px; gap: 12px; max-width: 1200px; width: 100%; }
 .game-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 900px;
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; max-width: 900px;
 }
 .turn-indicator {
-    background: #0f3460;
-    border-radius: 10px;
-    padding: 10px 20px;
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
-    border: 2px solid transparent;
-    transition: border-color 0.3s;
+    background: #0f3460; border-radius: 10px; padding: 10px 20px;
+    font-size: 15px; font-weight: bold; text-align: center;
+    border: 2px solid transparent; transition: border-color 0.3s, color 0.3s;
 }
 .turn-indicator.your-turn  { border-color: #4caf50; color: #4caf50; }
 .turn-indicator.enemy-turn { border-color: #e94560; color: #e94560; }
 
 .game-layout {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
+    display: flex; gap: 20px; align-items: flex-start;
+    flex-wrap: wrap; justify-content: center; width: 100%;
 }
-.grids-area {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-.grid.enemy .cell { cursor: crosshair; }
+.grids-area { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
 
-/* ── Sunken ships tracker ── */
-.sunk-tracker {
-    background: #0f3460;
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-size: 12px;
-    min-width: 130px;
-}
+/* ── Sunk tracker ── */
+.sunk-tracker { background: #0f3460; border-radius: 10px; padding: 12px 16px; font-size: 12px; min-width: 130px; }
 .sunk-tracker h4 { color: #a8dadc; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
 .sunk-item { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; color: #a8dadc; }
 .sunk-item.sunk { color: #555; text-decoration: line-through; }
@@ -234,23 +185,12 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 
 /* ── Chat ── */
 .chat-box {
-    background: #0f3460;
-    border-radius: 12px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 220px;
-    height: 420px;
+    background: #0f3460; border-radius: 12px; padding: 14px;
+    display: flex; flex-direction: column; gap: 8px; width: 220px; height: 420px;
 }
 .chat-box h4 { color: #a8dadc; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
 .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 13px;
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 13px;
 }
 .chat-messages::-webkit-scrollbar { width: 4px; }
 .chat-messages::-webkit-scrollbar-thumb { background: #16213e; border-radius: 4px; }
@@ -259,39 +199,22 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 .chat-msg.system .sender { color: #a8dadc; }
 .chat-input-row { display: flex; gap: 6px; }
 .chat-input-row input {
-    flex: 1;
-    background: #16213e;
-    border: 1px solid #16213e;
-    border-radius: 6px;
-    color: white;
-    font-size: 13px;
-    padding: 7px 9px;
-    letter-spacing: 0;
-    text-transform: none;
-    text-align: left;
+    flex: 1; background: #16213e; border: 1px solid #16213e; border-radius: 6px;
+    color: white; font-size: 13px; padding: 7px 9px;
+    letter-spacing: 0; text-transform: none; text-align: left;
 }
 .chat-input-row input:focus { outline: none; border-color: #e94560; }
 .chat-input-row button {
-    background: #e94560;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-    padding: 7px 11px;
+    background: #e94560; border: none; border-radius: 6px;
+    color: white; cursor: pointer; font-size: 13px; padding: 7px 11px;
 }
 .chat-input-row button:hover { background: #c73652; }
 
 /* ── Game Over ── */
 #gameover { justify-content: center; gap: 24px; padding: 60px 20px; }
 .result-box {
-    background: #0f3460;
-    border-radius: 16px;
-    padding: 50px 60px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    background: #0f3460; border-radius: 16px; padding: 50px 60px;
+    text-align: center; display: flex; flex-direction: column; gap: 16px;
 }
 .result-box h1 { font-size: 52px; }
 .result-box p  { color: #a8dadc; font-size: 18px; }
@@ -299,6 +222,44 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 </style>
 </head>
 <body>
+
+<!-- ═══════════════════ TUTORIAL MODAL ════════════════════════════════════════ -->
+<div id="tutorial" class="modal-overlay">
+    <div class="modal">
+        <h2>⚓ How to Play Battleship</h2>
+        <div class="tutorial-steps">
+            <div class="tut-step">
+                <div class="tut-icon">🚢</div>
+                <div>
+                    <strong>Place your ships</strong>
+                    <p>Click and drag across your grid to place each ship. The direction of your drag sets horizontal or vertical. <b>Right-click</b> anywhere on the grid to rotate.</p>
+                </div>
+            </div>
+            <div class="tut-step">
+                <div class="tut-icon">🎯</div>
+                <div>
+                    <strong>Take turns firing</strong>
+                    <p>When it's your turn, click any cell on the enemy grid to fire a shot. Grey = miss, Red = hit.</p>
+                </div>
+            </div>
+            <div class="tut-step">
+                <div class="tut-icon">💥</div>
+                <div>
+                    <strong>Hits give you another turn!</strong>
+                    <p>Land a hit and you get to fire again immediately. Miss and it's your opponent's turn.</p>
+                </div>
+            </div>
+            <div class="tut-step">
+                <div class="tut-icon">🏆</div>
+                <div>
+                    <strong>Sink all ships to win</strong>
+                    <p>First player to sink all 5 enemy ships — Carrier, Battleship, Cruiser, Submarine, and Destroyer — wins!</p>
+                </div>
+            </div>
+        </div>
+        <button class="btn" onclick="closeTutorial()">Got it! Let's Play 🚀</button>
+    </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════ LOBBY -->
 <div id="lobby" class="screen active">
@@ -314,7 +275,7 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
     </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ WAITING FOR PLAYER 2 -->
+<!-- ═══════════════════════════════════════════════════════════ WAITING FOR P2 -->
 <div id="waiting" class="screen">
     <a class="back" href="/">← Back to Home</a>
     <div class="room-code-box">
@@ -336,7 +297,7 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
             <br>
             <div class="placement-controls">
                 <button class="btn-secondary" onclick="rotateShip()">🔄 Rotate (<span id="orientLabel">Horizontal</span>)</button>
-                <p>Drag across your grid to place each ship</p>
+                <p>Drag to place · Right-click to rotate</p>
                 <button class="btn" id="readyBtn" disabled onclick="confirmPlacement()">Ready!</button>
             </div>
         </div>
@@ -355,7 +316,6 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
         <div style="width:70px"></div>
     </div>
     <div class="game-layout">
-        <!-- Chat -->
         <div class="chat-box">
             <h4>💬 Chat</h4>
             <div class="chat-messages" id="chatMessages"></div>
@@ -364,23 +324,16 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
                 <button onclick="sendChat()">➤</button>
             </div>
         </div>
-
         <div class="grids-area">
-            <!-- Your grid -->
             <div class="grid-wrapper">
                 <div class="grid-label">YOUR FLEET</div>
                 <div class="grid" id="myGrid"></div>
-                <div class="sunk-tracker" id="mySunk">
-                    <h4>Enemy Sunk</h4>
-                </div>
+                <div class="sunk-tracker" id="mySunk"><h4>Enemy Sunk</h4></div>
             </div>
-            <!-- Enemy grid -->
             <div class="grid-wrapper">
                 <div class="grid-label">ENEMY WATERS</div>
                 <div class="grid enemy" id="enemyGrid"></div>
-                <div class="sunk-tracker" id="enemySunk">
-                    <h4>You Sunk</h4>
-                </div>
+                <div class="sunk-tracker" id="enemySunk"><h4>You Sunk</h4></div>
             </div>
         </div>
     </div>
@@ -402,7 +355,6 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 <script>
 const socket = io();
 
-// ─── Ship definitions ─────────────────────────────────────────────────────────
 const SHIPS = [
     { name: 'Carrier',    size: 5, color: '#4a9eff' },
     { name: 'Battleship', size: 4, color: '#7c4dff' },
@@ -411,21 +363,17 @@ const SHIPS = [
     { name: 'Destroyer',  size: 2, color: '#ff9800' },
 ];
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let myId          = null;
-let roomCode      = null;
-let myTurn        = false;
-let placedShips   = [];      // ships I placed
-let currentShipIdx = 0;
-let orientation   = 'H';
-let isDragging    = false;
-let dragStart     = null;
-let myShots       = [];      // shots I fired at enemy
-let enemyShots    = [];      // shots enemy fired at me
-let mySunkList    = [];      // ships I sunk on enemy
-let enemySunkList = [];      // my ships that got sunk
+let myId = null, roomCode = null, myTurn = false;
+let placedShips = [], currentShipIdx = 0, orientation = 'H';
+let isDragging = false, dragStart = null;
+let myShots = [], enemyShots = [];
 
-// ─── Screen helper ────────────────────────────────────────────────────────────
+// ─── Tutorial ────────────────────────────────────────────────────────────────
+function closeTutorial() {
+    document.getElementById('tutorial').classList.add('hidden');
+}
+
+// ─── Screens ─────────────────────────────────────────────────────────────────
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -445,26 +393,18 @@ socket.on('room-created', ({ code }) => {
     document.getElementById('displayCode').textContent = code;
     showScreen('waiting');
 });
-
 socket.on('join-error', (msg) => showLobbyError(msg));
 
-// ─── Placement phase ──────────────────────────────────────────────────────────
-socket.on('start-placement', () => {
-    buildPlacementGrid();
-    buildShipList();
-    showScreen('placement');
-});
+// ─── Placement ───────────────────────────────────────────────────────────────
+socket.on('start-placement', () => { buildPlacementGrid(); buildShipList(); showScreen('placement'); });
 
 function buildShipList() {
     const el = document.getElementById('shipListItems');
     el.innerHTML = '';
     SHIPS.forEach((ship, i) => {
-        const placed = i < placedShips.length;
-        const current = i === currentShipIdx;
         const div = document.createElement('div');
-        div.className = 'ship-item' + (current ? ' current' : '') + (placed ? ' placed' : '');
+        div.className = 'ship-item' + (i === currentShipIdx ? ' current' : '') + (i < placedShips.length ? ' placed' : '');
         div.id = `shipItem_${i}`;
-
         const dots = Array(ship.size).fill(`<div class="ship-dot" style="background:${ship.color}"></div>`).join('');
         div.innerHTML = `<div class="ship-preview">${dots}</div><span>${ship.name} (${ship.size})</span>`;
         el.appendChild(div);
@@ -477,19 +417,20 @@ function rotateShip() {
     clearPreview();
 }
 
-// ── Build placement grid ──────────────────────────────────────────────────────
 function buildPlacementGrid() {
     const grid = document.getElementById('placementGrid');
     grid.innerHTML = '';
+    // Right-click on grid = rotate
+    grid.addEventListener('contextmenu', (e) => { e.preventDefault(); rotateShip(); });
+
     for (let y = 0; y < 10; y++) {
         for (let x = 0; x < 10; x++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
-            cell.dataset.x = x;
-            cell.dataset.y = y;
-            cell.addEventListener('mousedown',  onPlacementMouseDown);
-            cell.addEventListener('mouseover',  onPlacementMouseOver);
-            cell.addEventListener('mouseup',    onPlacementMouseUp);
+            cell.dataset.x = x; cell.dataset.y = y;
+            cell.addEventListener('mousedown', onPlacementMouseDown);
+            cell.addEventListener('mouseover', onPlacementMouseOver);
+            cell.addEventListener('mouseup',   onPlacementMouseUp);
             grid.appendChild(cell);
         }
     }
@@ -508,10 +449,8 @@ function onPlacementMouseDown(e) {
 
 function onPlacementMouseOver(e) {
     if (!isDragging || !dragStart || currentShipIdx >= SHIPS.length) return;
-    const endX = +e.target.dataset.x;
-    const endY = +e.target.dataset.y;
     clearPreview();
-    const cells = getShipCells(dragStart.x, dragStart.y, endX, endY);
+    const cells = getShipCells(dragStart.x, dragStart.y, +e.target.dataset.x, +e.target.dataset.y);
     const valid = isValidPlacement(cells);
     cells.forEach(({ x, y }) => {
         const cell = getPlacementCell(x, y);
@@ -522,58 +461,46 @@ function onPlacementMouseOver(e) {
 function onPlacementMouseUp(e) {
     if (!isDragging || !dragStart || currentShipIdx >= SHIPS.length) return;
     isDragging = false;
-    const endX = +e.target.dataset.x;
-    const endY = +e.target.dataset.y;
     clearPreview();
-
-    const cells = getShipCells(dragStart.x, dragStart.y, endX, endY);
+    const cells = getShipCells(dragStart.x, dragStart.y, +e.target.dataset.x, +e.target.dataset.y);
     if (!isValidPlacement(cells)) { dragStart = null; return; }
 
-    // Place the ship
     const ship = SHIPS[currentShipIdx];
     placedShips.push({ name: ship.name, size: ship.size, color: ship.color, cells });
-
     cells.forEach(({ x, y }) => {
         const cell = getPlacementCell(x, y);
         if (cell) { cell.classList.add('ship'); cell.style.background = ship.color + '88'; }
     });
-
     currentShipIdx++;
     dragStart = null;
     buildShipList();
-
-    if (currentShipIdx >= SHIPS.length) {
-        document.getElementById('readyBtn').disabled = false;
-    }
+    if (currentShipIdx >= SHIPS.length) document.getElementById('readyBtn').disabled = false;
 }
 
 function getShipCells(x1, y1, x2, y2) {
     const ship = SHIPS[currentShipIdx];
     if (!ship) return [];
     const size = ship.size;
-    const dx = Math.abs(x2 - x1);
-    const dy = Math.abs(y2 - y1);
-    const dir = (dx >= dy) ? 'H' : 'V';
+    const dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
     const cells = [];
-
-    if (dir === 'H') {
-        const startX = Math.min(x1, x2);
-        for (let i = 0; i < size; i++) cells.push({ x: startX + i, y: y1 });
+    if (dx >= dy) {
+        const sx = Math.min(x1, x2);
+        for (let i = 0; i < size; i++) cells.push({ x: sx + i, y: y1 });
     } else {
-        const startY = Math.min(y1, y2);
-        for (let i = 0; i < size; i++) cells.push({ x: x1, y: startY + i });
+        const sy = Math.min(y1, y2);
+        for (let i = 0; i < size; i++) cells.push({ x: x1, y: sy + i });
     }
     return cells;
 }
 
 function isValidPlacement(cells) {
+    if (!cells.length) return false;
     for (const { x, y } of cells) {
         if (x < 0 || x > 9 || y < 0 || y > 9) return false;
-        for (const placed of placedShips) {
+        for (const placed of placedShips)
             if (placed.cells.some(c => c.x === x && c.y === y)) return false;
-        }
     }
-    return cells.length > 0;
+    return true;
 }
 
 function clearPreview() {
@@ -586,7 +513,6 @@ function confirmPlacement() {
     document.getElementById('readyBtn').disabled = true;
     document.getElementById('readyBtn').textContent = 'Waiting for opponent…';
 }
-
 socket.on('placement-confirmed', () => {
     document.getElementById('readyBtn').textContent = 'Waiting for opponent…';
 });
@@ -602,7 +528,6 @@ socket.on('game-start', ({ firstTurn }) => {
 });
 
 function buildGameGrids() {
-    // My grid — show my ships
     buildGrid('myGrid', false);
     placedShips.forEach(ship => {
         ship.cells.forEach(({ x, y }) => {
@@ -610,8 +535,6 @@ function buildGameGrids() {
             if (cell) { cell.classList.add('ship'); cell.style.background = ship.color + '88'; }
         });
     });
-
-    // Enemy grid — clickable
     buildGrid('enemyGrid', true);
 }
 
@@ -622,8 +545,7 @@ function buildGrid(id, clickable) {
         for (let x = 0; x < 10; x++) {
             const cell = document.createElement('div');
             cell.className = 'cell' + (clickable ? ' enemy' : '');
-            cell.dataset.x = x;
-            cell.dataset.y = y;
+            cell.dataset.x = x; cell.dataset.y = y;
             if (clickable) cell.addEventListener('click', onFire);
             grid.appendChild(cell);
         }
@@ -648,52 +570,55 @@ function buildSunkTrackers() {
 // ─── Firing ───────────────────────────────────────────────────────────────────
 function onFire(e) {
     if (!myTurn) return;
-    const x = +e.target.dataset.x;
-    const y = +e.target.dataset.y;
+    const x = +e.target.dataset.x, y = +e.target.dataset.y;
     if (myShots.some(s => s.x === x && s.y === y)) return;
     socket.emit('fire', { x, y });
+}
+
+function triggerExplosion(cell) {
+    cell.classList.remove('exploding');
+    void cell.offsetWidth; // reflow to restart animation
+    cell.classList.add('exploding');
 }
 
 socket.on('shot-result', ({ shooter, x, y, hit, sunk, sunkShipName, won }) => {
     const iShot = (shooter === socket.id);
 
     if (iShot) {
-        // Update enemy grid
         myShots.push({ x, y });
         const cell = document.querySelector(`#enemyGrid .cell[data-x="${x}"][data-y="${y}"]`);
         if (cell) {
             cell.classList.remove('enemy');
             cell.classList.add(hit ? 'hit' : 'miss');
-            cell.textContent = hit ? '💥' : '•';
+            if (hit) {
+                cell.textContent = '💥';
+                triggerExplosion(cell);
+            } else {
+                cell.textContent = '•';
+            }
         }
-        if (sunk) {
-            markSunkOnGrid('enemyGrid', sunkShipName);
-            document.getElementById(`enemySunk_${sunkShipName}`)?.classList.add('sunk');
-        }
+        if (sunk) document.getElementById(`enemySunk_${sunkShipName}`)?.classList.add('sunk');
     } else {
-        // Update my grid
         enemyShots.push({ x, y });
         const cell = document.querySelector(`#myGrid .cell[data-x="${x}"][data-y="${y}"]`);
         if (cell) {
             cell.classList.add(hit ? 'hit' : 'miss');
-            cell.textContent = hit ? '💥' : '•';
+            if (hit) {
+                cell.textContent = '💥';
+                triggerExplosion(cell);
+            } else {
+                cell.textContent = '•';
+            }
         }
-        if (sunk) {
-            document.getElementById(`mySunk_${sunkShipName}`)?.classList.add('sunk');
-        }
+        if (sunk) document.getElementById(`mySunk_${sunkShipName}`)?.classList.add('sunk');
     }
 
     if (!won) {
-        myTurn = !iShot;
+        // Hit = keep your turn, miss = switch turns
+        myTurn = iShot ? hit : !hit;
         updateTurnIndicator();
     }
 });
-
-function markSunkOnGrid(gridId, shipName) {
-    const ship = placedShips.find(s => s.name === shipName);
-    if (!ship) return;
-    // We don't have enemy ship positions until game over, so just keep hit state
-}
 
 function updateTurnIndicator() {
     const el = document.getElementById('turnIndicator');
@@ -701,7 +626,7 @@ function updateTurnIndicator() {
         el.textContent = '🎯 Your Turn — Click to Fire!';
         el.className = 'turn-indicator your-turn';
     } else {
-        el.textContent = '⏳ Enemy\'s Turn…';
+        el.textContent = "⏳ Enemy's Turn…";
         el.className = 'turn-indicator enemy-turn';
     }
 }
@@ -725,12 +650,11 @@ socket.on('player-disconnected', () => {
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 function sendChat() {
     const input = document.getElementById('chatInput');
-    const text  = input.value.trim();
+    const text = input.value.trim();
     if (!text) return;
     socket.emit('chat-message', { text });
     input.value = '';
 }
-
 socket.on('chat-message', ({ sender, text }) => {
     const box = document.getElementById('chatMessages');
     const msg = document.createElement('div');

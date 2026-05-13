@@ -168,7 +168,8 @@ io.on('connection', (socket) => {
             const winnerNum = room.playerNums[socket.id];
             io.to(code).emit('game-over', { winner: socket.id, winnerNum });
         } else {
-            room.currentTurn = opponentId;
+            // Hit = shoot again, miss = switch turns
+            if (!hit) room.currentTurn = opponentId;
         }
     });
 
