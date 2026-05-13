@@ -132,9 +132,9 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
     font-size: 16px; position: relative; overflow: visible;
 }
 .cell.ship     { background: #1e4976; }
-.cell.hit      { background: #c0392b; }
-.cell.miss     { background: #2a4a5e; }
-.cell.sunk     { background: #7b0000; }
+.cell.hit      { background: #c0392b; pointer-events: none; }
+.cell.miss     { background: #2a4a5e; pointer-events: none; }
+.cell.sunk     { background: #7b0000; pointer-events: none; }
 .cell.preview-valid   { background: rgba(100, 200, 100, 0.5); }
 .cell.preview-invalid { background: rgba(233, 69, 96, 0.4); }
 .cell.enemy:hover:not(.hit):not(.miss):not(.sunk) { background: rgba(233, 69, 96, 0.3); cursor: crosshair; }
@@ -157,6 +157,7 @@ input[type="text"]:focus { outline: none; border-color: #e94560; }
 .cell.exploding {
     animation: boom 0.55s ease-out forwards, smoke-pulse 2s ease-in-out 0.55s infinite !important;
     z-index: 10;
+    pointer-events: none;
 }
 
 /* ── Game screen ── */
@@ -571,11 +572,42 @@ function buildSunkTrackers() {
     });
 }
 
+// ─── Blast sound (Web Audio API — no file needed) ─────────────────────────────
+function playBlastSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const duration = 0.65;
+        const bufferSize = Math.floor(ctx.sampleRate * duration);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        // Low-pass filter gives it a deep "boom" character
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(600, ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + duration);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(1.0, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        source.start();
+    } catch (e) { /* browser blocked audio — ignore */ }
+}
+
 // ─── Firing ───────────────────────────────────────────────────────────────────
 function onFire(e) {
     if (!myTurn) return;
     const x = +e.target.dataset.x, y = +e.target.dataset.y;
     if (myShots.some(s => s.x === x && s.y === y)) return;
+    myTurn = false; // lock immediately — server response re-enables on a hit
     socket.emit('fire', { x, y });
 }
 
@@ -597,6 +629,7 @@ socket.on('shot-result', ({ shooter, x, y, hit, sunk, sunkShipName, won }) => {
             if (hit) {
                 cell.textContent = '💥';
                 triggerExplosion(cell);
+                playBlastSound();
             } else {
                 cell.textContent = '•';
             }
@@ -610,6 +643,7 @@ socket.on('shot-result', ({ shooter, x, y, hit, sunk, sunkShipName, won }) => {
             if (hit) {
                 cell.textContent = '💥';
                 triggerExplosion(cell);
+                playBlastSound();
             } else {
                 cell.textContent = '•';
             }
